@@ -21,12 +21,25 @@ class RetryInterceptor(
         while (attempt <= maxRetries) {
             try {
                 val response = chain.proceed(chain.request())
-                if (response.isSuccessful || attempt == maxRetries) return response
-                response.close()
+                // Success -> return immediately
+                if (response.isSuccessful) return response
+
+                // For server errors (5xx), retry if we have retries left
+                val code = response.code
+                if (code in 500..599 && attempt < maxRetries) {
+                    response.close()
+                    logRetry(attempt + 1)
+                    sleeper(retryDelayMillis)
+                    attempt += 1
+                    continue
+                }
+                // For client errors (4xx) or exhausted retries, return the response
+                return response
             } catch (exception: IOException) {
                 if (attempt == maxRetries) throw exception
                 lastException = exception
             }
+            // Delay before next retry on IOException or server error retry decision
             logRetry(attempt + 1)
             sleeper(retryDelayMillis)
             attempt += 1

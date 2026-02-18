@@ -112,6 +112,24 @@ class ApiServiceTest {
 
         override fun withWriteTimeout(timeout: Int, unit: TimeUnit): Interceptor.Chain = this
     }
+
+    @Test
+    fun doesNotRetryOnClientError4xx() {
+        val delays = mutableListOf<Long>()
+        val interceptor = RetryInterceptor(sleeper = { delays.add(it) })
+        val chain = FakeChain(
+            listOf(
+                Result.success(createResponse(404))
+            )
+        )
+
+        val response = interceptor.intercept(chain)
+
+        // Should not retry on 4xx errors
+        assertEquals(404, response.code)
+        assertEquals(1, chain.proceedCount)
+        assertTrue(delays.isEmpty())
+    }
 }
 
 private fun createResponse(code: Int): Response {
