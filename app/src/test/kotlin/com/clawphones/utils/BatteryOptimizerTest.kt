@@ -33,4 +33,18 @@ class BatteryOptimizerTest {
         assertEquals(15, optimizer.recommendedPauseDurationMinutes(batteryLow, backgroundTasksEnabled = true))
         assertEquals(0, optimizer.recommendedPauseDurationMinutes(batteryHigh, backgroundTasksEnabled = true))
     }
+
+    @Test
+    fun testShouldPause_whenBackgroundDisabled() {
+        val battery = BatteryInfo(level = 10, isCharging = false)
+        // When background tasks are disabled, optimizer should not pause
+        assertFalse(optimizer.shouldPauseBackgroundTasks(battery, backgroundTasksEnabled = false))
+    }
+
+    @Test
+    fun testShouldPause_boundaryAtThreshold_notPaused() {
+        val battery = BatteryInfo(level = 20, isCharging = false)
+        // At the threshold, it should not pause (exclusive check)
+        assertFalse(optimizer.shouldPauseBackgroundTasks(battery, backgroundTasksEnabled = true))
+    }
 }
