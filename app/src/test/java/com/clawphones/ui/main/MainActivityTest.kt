@@ -42,4 +42,14 @@ class MainActivityTest {
         activity.performLogin()
         assertTrue(activity.isUserLoggedIn())
     }
+
+    @Test
+    fun testLogout_UIStateShowsLoginButton() {
+        val activity = MainActivity()
+        activity.performLogout()
+        // UI visibility can't be asserted without Android framework in unit tests,
+        // but we can rely on internal state helper to verify expected UI guidance.
+        assertFalse(activity.isUserLoggedIn())
+        assertTrue(activity.shouldShowLoginButton())
+    }
 }

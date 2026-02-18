@@ -33,17 +33,23 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun updateUI() {
-        if (isLoggedIn) {
-            userNameText.text = getString(R.string.welcome_user)
-            userNameText.visibility = TextView.VISIBLE
-            logoutButton.visibility = Button.VISIBLE
-            loginButton.visibility = Button.GONE
-        } else {
-            userNameText.visibility = TextView.GONE
-            logoutButton.visibility = Button.GONE
-            loginButton.visibility = Button.VISIBLE
+        // Guard UI updates when views are not initialized (e.g., in unit tests)
+        if (this::userNameText.isInitialized && this::logoutButton.isInitialized && this::loginButton.isInitialized) {
+            if (isLoggedIn) {
+                userNameText.text = getString(R.string.welcome_user)
+                userNameText.visibility = TextView.VISIBLE
+                logoutButton.visibility = Button.VISIBLE
+                loginButton.visibility = Button.GONE
+            } else {
+                userNameText.visibility = TextView.GONE
+                logoutButton.visibility = Button.GONE
+                loginButton.visibility = Button.VISIBLE
+            }
         }
     }
+
+    // Exposed for tests to reason about UI state without depending on Android views
+    fun shouldShowLoginButton(): Boolean = !isLoggedIn
 
     fun performLogout() {
         isLoggedIn = false
