@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.clawphones.network.ApiServiceTest" tests="3" skipped="0" failures="0" errors="0" timestamp="2026-02-18T16:14:23" hostname="glm-node-4" time="1.609">
+  <properties/>
+  <testcase name="login returns failure response()" classname="com.clawphones.network.ApiServiceTest" time="1.532"/>
+  <testcase name="login sends correct request data()" classname="com.clawphones.network.ApiServiceTest" time="0.026"/>
+  <testcase name="login returns user info on success()" classname="com.clawphones.network.ApiServiceTest" time="0.025"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>
