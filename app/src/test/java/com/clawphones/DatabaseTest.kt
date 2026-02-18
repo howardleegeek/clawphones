@@ -68,4 +68,11 @@ class DatabaseTest {
         db.clear()
         assertEquals(0, db.size())
     }
+    
+    @Test
+    fun testGetNonExistingReturnsNull() {
+        val db = LocalDatabase()
+        val got = db.get("non-existent-id")
+        assertNull(got)
+    }
 }
