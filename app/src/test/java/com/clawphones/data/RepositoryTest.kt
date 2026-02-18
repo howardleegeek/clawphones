@@ -1,54 +1,51 @@
 package com.clawphones.data
 
 import kotlinx.coroutines.runBlocking
-import org.junit.Assert.*
+import org.junit.Assert.assertEquals
 import org.junit.Test
 
+// In-memory DAO for tests
+class InMemoryCacheDao : CacheDao {
+  val storage = mutableMapOf<String, String>()
+  override suspend fun getValue(key: String): String? = storage[key]
+  override suspend fun insert(cache: DataCacheEntity) {
+    storage[cache.key] = cache.value
+  }
+}
+
+class CountingNetworkService : NetworkService {
+  var calls = 0
+  override suspend fun fetchData(): String {
+    calls += 1
+    return "net-data"
+  }
+}
+
 class RepositoryTest {
-
-  // Simple fake DAO to test Repository behavior without Android framework
-  class FakeCacheDao(private val initial: MutableMap<String, String> = mutableMapOf()) : CacheDao {
-    override suspend fun getValue(key: String): String? {
-      return initial[key]
-    }
-
-    override suspend fun insert(entry: DataCacheEntity) {
-      initial[entry.key] = entry.value
-    }
-
-    // helper for test assertions
-    fun getValueSync(key: String): String? = initial[key]
-  }
-
-  class FakeNetworkService(private val value: String = "networkValue") : NetworkService {
-    var called = false
-        private set
-    override suspend fun fetchData(): String {
-      called = true
-      return value
-    }
-  }
-
   @Test
-  fun readsFromCacheNoNetwork() = runBlocking {
-    val dao = FakeCacheDao(mutableMapOf("dataKey" to "cachedValue"))
-    val net = FakeNetworkService("shouldNotCall")
+  fun readsFromCacheWhenPresent() = runBlocking {
+    val dao = InMemoryCacheDao()
+    dao.insert(DataCacheEntity("dataKey", "cached"))
+    val net = CountingNetworkService()
     val repo = Repository(dao, net)
 
     val result = repo.getData()
-    assertEquals("cachedValue", result)
-    assertFalse(net.called)
+    assertEquals("cached", result)
+    // network should not be called
+    assertEquals(0, net.calls)
   }
 
   @Test
   fun fetchesFromNetworkAndCaches() = runBlocking {
-    val dao = FakeCacheDao(mutableMapOf())
-    val net = FakeNetworkService("networkValue")
+    val dao = InMemoryCacheDao()
+    val net = CountingNetworkService()
     val repo = Repository(dao, net)
 
     val result = repo.getData()
-    assertEquals("networkValue", result)
-    // verify that value is cached
-    assertEquals("networkValue", (dao as FakeCacheDao).getValueSync("dataKey"))
+    assertEquals("net-data", result)
+    // network should be called exactly once
+    assertEquals(1, net.calls)
+    // data should be cached locally
+    assertEquals("net-data", dao.storage["dataKey"])
   }
 }
