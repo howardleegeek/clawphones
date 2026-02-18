@@ -10,7 +10,14 @@ enum class AccessibleRole {
     SLIDER,
     IMAGE,
     TEXT,
-    CHECKBOX
+    CHECKBOX,
+    LINK,
+    RADIO_BUTTON,
+    TOGGLE,
+    PROGRESS_INDICATOR,
+    TAB,
+    MENU_ITEM,
+    EDIT_TEXT
 }
 
 object AccessibilityHelper {
@@ -23,6 +30,13 @@ object AccessibilityHelper {
             AccessibleRole.IMAGE -> "image"
             AccessibleRole.TEXT -> "text"
             AccessibleRole.CHECKBOX -> "checkbox"
+            AccessibleRole.LINK -> "link"
+            AccessibleRole.RADIO_BUTTON -> "radio button"
+            AccessibleRole.TOGGLE -> "toggle"
+            AccessibleRole.PROGRESS_INDICATOR -> "progress indicator"
+            AccessibleRole.TAB -> "tab"
+            AccessibleRole.MENU_ITEM -> "menu item"
+            AccessibleRole.EDIT_TEXT -> "text field"
         }
         val trimmed = label.trim()
         return if (trimmed.isEmpty()) suffix else "$trimmed $suffix"
@@ -43,5 +57,48 @@ object AccessibilityHelper {
     fun ensureDescription(input: String?): String {
         val trimmed = sanitizeDescription(input)
         return if (trimmed.isEmpty()) "No description provided" else trimmed
+    }
+
+    /** Build a state description for interactive elements (e.g., on/off for switches). */
+    fun buildStateDescription(isOn: Boolean): String {
+        return if (isOn) "on" else "off"
+    }
+
+    /** Combine a label with its state for interactive elements. */
+    fun buildStatefulDescription(label: String, role: AccessibleRole, isOn: Boolean): String {
+        val baseDescription = toAccessibleDescription(label, role)
+        val stateSuffix = buildStateDescription(isOn)
+        return "$baseDescription, $stateSuffix"
+    }
+
+    /** Validate that a content description meets minimum accessibility requirements. */
+    fun validateContentDescription(description: String?): ValidationResult {
+        val trimmed = sanitizeDescription(description)
+        return when {
+            trimmed.isEmpty() -> ValidationResult.EMPTY
+            trimmed.length < MIN_CONTENT_LENGTH -> ValidationResult.TOO_SHORT
+            else -> ValidationResult.VALID
+        }
+    }
+
+    /** Build a compound description from multiple parts, filtering empty ones. */
+    fun buildCompoundDescription(vararg parts: String?): String {
+        return parts.mapNotNull { sanitizeDescription(it).takeIf { s -> s.isNotEmpty() } }
+            .joinToString(", ")
+    }
+
+    /** Check if text meets minimum accessibility length requirements. */
+    fun isValidAccessibilityText(text: String?): Boolean {
+        return validateContentDescription(text) == ValidationResult.VALID
+    }
+
+    enum class ValidationResult {
+        VALID,
+        EMPTY,
+        TOO_SHORT
+    }
+
+    companion object {
+        private const val MIN_CONTENT_LENGTH = 2
     }
 }
