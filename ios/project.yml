@@ -1,0 +1,27 @@
+name: ClawPhonesTests
+options:
+  bundleIdPrefix: com.clawphones
+  deploymentTarget:
+    iOS: "15.0"
+  xcodeVersion: "15.0"
+
+settings:
+  base:
+    SWIFT_VERSION: "5.9"
+    TARGETED_DEVICE_FAMILY: "1,2"
+    DEVELOPMENT_TEAM: ""
+
+targets:
+  ClawPhonesTests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources:
+      - path: ClawPhonesTests
+        type: group
+    settings:
+      base:
+        INFOPLIST_FILE: ClawPhonesTests/Info.plist
+        PRODUCT_BUNDLE_IDENTIFIER: com.clawphones.tests
+        TEST_HOST: ""
+        BUNDLE_LOADER: ""
+        SWIFT_EMIT_LOC_STRINGS: "YES"
