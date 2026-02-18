@@ -49,6 +49,36 @@ class AndroidFramework:
         })
         return self._capabilities.detect()
 
+    def _validate_inference_inputs(self, model: str, input_data: Dict[str, Any]) -> None:
+        # Centralized validation to keep run_inference compact
+        if not model:
+            self.logger.error("Inference failed: missing model", extra={
+                "task_id": self.task_id,
+                "platform": self.platform,
+            })
+            raise ValueError("Model name is required")
+        if not isinstance(input_data, dict):
+            self.logger.error("Inference failed: input_data must be a dict", extra={
+                "task_id": self.task_id,
+                "platform": self.platform,
+            })
+            raise ValueError("input_data must be a dict")
+
+    def _validate_batch_inputs(self, model: str, inputs: List[Dict[str, Any]]) -> None:
+        # Centralized validation for batch inferences
+        if not model:
+            self.logger.error("Batch inference failed: missing model", extra={
+                "task_id": self.task_id,
+                "platform": self.platform,
+            })
+            raise ValueError("Model name is required")
+        if not isinstance(inputs, list):
+            self.logger.error("Batch inference failed: inputs must be a list", extra={
+                "task_id": self.task_id,
+                "platform": self.platform,
+            })
+            raise ValueError("inputs must be a list")
+
     def load_model(self, model: str) -> Dict[str, Any]:
         if not model:
             self.logger.error("Model load failed: missing model name", extra={
@@ -96,6 +126,7 @@ class AndroidFramework:
     def get_loaded_models(self) -> List[str]:
         return list(self._loaded_models.keys())
 
+    
     def initialize(self) -> Dict[str, Any]:
         self.logger.info("Initializing Android AI framework", extra={
             "task_id": self.task_id,
@@ -123,18 +154,7 @@ class AndroidFramework:
 
     def run_inference(self, model: str, input_data: Dict[str, Any]) -> Dict[str, Any]:
         self._inference_count += 1
-        if not model:
-            self.logger.error("Inference failed: missing model", extra={
-                "task_id": self.task_id,
-                "platform": self.platform,
-            })
-            raise ValueError("Model name is required")
-        if not isinstance(input_data, dict):
-            self.logger.error("Inference failed: input_data must be a dict", extra={
-                "task_id": self.task_id,
-                "platform": self.platform,
-            })
-            raise ValueError("input_data must be a dict")
+        self._validate_inference_inputs(model, input_data)
 
         self.logger.debug("Running inference", extra={
             "task_id": self.task_id,
@@ -151,18 +171,7 @@ class AndroidFramework:
 
     def run_batch_inference(self, model: str, inputs: List[Dict[str, Any]]) -> Dict[str, Any]:
         self._inference_count += len(inputs)
-        if not model:
-            self.logger.error("Batch inference failed: missing model", extra={
-                "task_id": self.task_id,
-                "platform": self.platform,
-            })
-            raise ValueError("Model name is required")
-        if not isinstance(inputs, list):
-            self.logger.error("Batch inference failed: inputs must be a list", extra={
-                "task_id": self.task_id,
-                "platform": self.platform,
-            })
-            raise ValueError("inputs must be a list")
+        self._validate_batch_inputs(model, inputs)
 
         self.logger.info("Running batch inference", extra={
             "task_id": self.task_id,
