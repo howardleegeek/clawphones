@@ -25,4 +25,11 @@ class MainActivityTest {
         val dest = manager.startupDestination()
         assertEquals(StartupDestination.LOGIN, dest)
     }
+
+    @Test
+    fun blankTokenGoesToLogin() = runBlocking {
+        val manager = LoginStateManager({ "" }, DefaultTokenValidator())
+        val dest = manager.startupDestination()
+        assertEquals(StartupDestination.LOGIN, dest)
+    }
 }
