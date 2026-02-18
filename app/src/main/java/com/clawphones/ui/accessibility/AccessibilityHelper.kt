@@ -32,4 +32,16 @@ object AccessibilityHelper {
     fun normalizeForAccessibility(text: String): String {
         return text.trim().replaceFirstChar { if (it.isLowerCase()) it.titlecase() else it.toString() }
     }
+
+    /** Normalize or sanitize a description string for accessibility tests. */
+    // - If input is null, return empty string (tests expect this behavior).
+    fun sanitizeDescription(input: String?): String {
+        return input?.trim() ?: ""
+    }
+
+    /** Ensure a non-empty description, providing a default when blank. */
+    fun ensureDescription(input: String?): String {
+        val trimmed = sanitizeDescription(input)
+        return if (trimmed.isEmpty()) "No description provided" else trimmed
+    }
 }
