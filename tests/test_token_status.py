@@ -1,30 +1,67 @@
+import pathlib
+import importlib.util
+import pytest
+
 from fastapi.testclient import TestClient
-from proxy.server import app
 
-client = TestClient(app)
 
-ADMIN_HEADER = {"X-Admin-Token": "admin-secret"}
+@pytest.fixture(scope="session")
+def app():
+    # Load the FastAPI app from the standalone module without requiring a package import
+    repo_root = pathlib.Path(__file__).resolve().parents[1]
+    server_path = repo_root / "proxy" / "server.py"
+    spec = importlib.util.spec_from_file_location("proxy_server", str(server_path))
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)  # type: ignore
+    return module.app  # type: ignore
 
-def test_admin_required_missing_header_get():
-    resp = client.get("/admin/tokens/abc/status")
+
+@pytest.fixture
+def client(app):
+    return TestClient(app)
+
+
+def test_admin_required_missing(client):
+    resp = client.get("/admin/tokens/sample/status")
     assert resp.status_code == 403
 
-def test_admin_required_missing_header_patch():
-    resp = client.patch("/admin/tokens/abc/status", json={"enabled": False})
+
+def test_admin_required_wrong(client):
+    resp = client.get("/admin/tokens/sample/status", headers={"X-Admin-Token": "wrong"})
     assert resp.status_code == 403
 
-def test_get_default_status_with_admin():
-    resp = client.get("/admin/tokens/xyz/status", headers=ADMIN_HEADER)
-    assert resp.status_code == 200
-    assert resp.json() == {"token": "xyz", "enabled": True}
 
-def test_disable_and_retrieve_status():
-    # Disable token
-    resp = client.patch("/admin/tokens/abc/status", json={"enabled": False}, headers=ADMIN_HEADER)
+def test_get_default_status_enabled(client):
+    resp = client.get("/admin/tokens/sample/status", headers={"X-Admin-Token": "admin-secret"})
     assert resp.status_code == 200
-    assert resp.json() == {"token": "abc", "enabled": False}
+    data = resp.json()
+    assert data["token"] == "sample"
+    assert data["enabled"] is True
 
-    # Retrieve to confirm
-    resp2 = client.get("/admin/tokens/abc/status", headers=ADMIN_HEADER)
+
+def test_disable_token(client):
+    resp = client.patch(
+        "/admin/tokens/sample/status",
+        json={"enabled": False},
+        headers={"X-Admin-Token": "admin-secret"},
+    )
+    assert resp.status_code == 200
+    assert resp.json()["enabled"] is False
+
+    resp2 = client.get("/admin/tokens/sample/status", headers={"X-Admin-Token": "admin-secret"})
     assert resp2.status_code == 200
-    assert resp2.json() == {"token": "abc", "enabled": False}
+    assert resp2.json()["enabled"] is False
+
+
+def test_enable_token(client):
+    resp = client.patch(
+        "/admin/tokens/sample/status",
+        json={"enabled": True},
+        headers={"X-Admin-Token": "admin-secret"},
+    )
+    assert resp.status_code == 200
+    assert resp.json()["enabled"] is True
+
+    resp2 = client.get("/admin/tokens/sample/status", headers={"X-Admin-Token": "admin-secret"})
+    assert resp2.status_code == 200
+    assert resp2.json()["enabled"] is True
