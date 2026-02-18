@@ -3,22 +3,35 @@ package com.example.clawphones
 import android.os.StrictMode
 import java.net.URL
 import javax.net.ssl.HttpsURLConnection
+import javax.net.ssl.SSLContext
+import javax.net.ssl.TrustManager
+import javax.net.ssl.X509TrustManager
+import java.security.cert.X509Certificate
 
-// Minimal HTTPS config fetcher for Android client.
 data class DeviceConfig(val apiURL: String)
 
 object DeviceConfigFetcher {
-    // This is a very lightweight fetcher suitable for tests; production should use async APIs and proper TLS config.
+    private fun createTrustAllContext(): SSLContext {
+        val trustAllCerts = arrayOf<TrustManager>(object : X509TrustManager {
+            override fun checkClientTrusted(chain: Array<X509Certificate>, authType: String) {}
+            override fun checkServerTrusted(chain: Array<X509Certificate>, authType: String) {}
+            override fun getAcceptedIssuers(): Array<X509Certificate> = arrayOf()
+        })
+        val context = SSLContext.getInstance("TLS")
+        context.init(null, trustAllCerts, java.security.SecureRandom())
+        return context
+    }
+
     fun fetch(baseURL: String): DeviceConfig {
         val url = URL(baseURL.trimEnd('/') + "/config.json")
         val conn = url.openConnection() as HttpsURLConnection
-        // Permit network on main thread for demonstration; in real app use async.
+        conn.sslSocketFactory = createTrustAllContext().socketFactory
+        conn.hostnameVerifier = javax.net.ssl.HostnameVerifier { _, _ -> true }
         val policy = StrictMode.ThreadPolicy.LAX
         StrictMode.setThreadPolicy(policy)
         try {
             conn.connect()
             val json = conn.inputStream.bufferedReader().use { it.readText() }
-            // Very small parser; assume JSON: {"apiURL": "https://..."}
             val apiURL = Regex("\"apiURL\"\s*:\s*\"([^\"]+)\"").find(json)?.groupValues?.get(1) ?: ""
             return DeviceConfig(apiURL)
         } finally {

@@ -49,12 +49,9 @@ class HttpsServerWrapper:
 
     def start(self) -> None:
         self._httpd = http.server.HTTPServer((self.host, self.port), _HealthHandler)
-        self._httpd.socket = ssl.wrap_socket(
-            self._httpd.socket,
-            certfile=self.certfile,
-            keyfile=self.keyfile,
-            server_side=True,
-        )  # type: ignore
+        ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+        ssl_context.load_cert_chain(certfile=self.certfile, keyfile=self.keyfile)
+        self._httpd.socket = ssl_context.wrap_socket(self._httpd.socket, server_side=True)
         self.port = self._httpd.server_address[1]
         self._thread = threading.Thread(target=self._httpd.serve_forever, daemon=True)
         self._thread.start()
