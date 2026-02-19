@@ -1,57 +1,42 @@
 package com.clawphones.app.update
 
 import android.app.Activity
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNotNull
+import com.google.android.play.core.appupdate.AppUpdateInfo
+import com.google.android.play.core.appupdate.AppUpdateManager
+import com.google.android.play.core.install.model.UpdateAvailability
+import com.google.android.play.core.install.model.AppUpdateType
+import com.google.android.play.core.tasks.OnSuccessListener
+import com.google.android.play.core.tasks.Task
 import org.junit.Test
-import org.mockito.Mockito.mock
+import org.mockito.ArgumentMatchers.any
+import org.mockito.Mockito.*
 
+/** Instrumentation-like test for UpdateManager using mocks. */
 class UpdateManagerTest {
 
     @Test
-    fun promptsWhenUpdateAvailable() {
-        val activity = mock(Activity::class.java)
+    fun triggersUpdateFlowWhenUpdateAvailable() {
+        val mockActivity = mock(Activity::class.java)
+        val mockAppUpdateManager = mock(AppUpdateManager::class.java)
+        val mockTask = mock(Task::class.java) as Task<AppUpdateInfo>
+        val mockInfo = mock(AppUpdateInfo::class.java)
 
-        // Fake SDK that returns an available update
-        val sdk = object : UpdateSDK {
-            override fun checkForUpdate(callback: (UpdateInfo) -> Unit) {
-                callback(UpdateInfo(true, "1.2.3"))
-            }
-            override fun startUpdateFlow(activity: Activity, updateType: Int, requestCode: Int) {
-                // no-op
-            }
-        }
+        // Setup task to return mockInfo via onSuccess callback
+        `when`(mockAppUpdateManager.appUpdateInfo).thenReturn(mockTask)
+        `when`(mockInfo.updateAvailability()).thenReturn(UpdateAvailability.UPDATE_AVAILABLE)
+        `when`(mockInfo.isUpdateTypeAllowed(AppUpdateType.IMMEDIATE)).thenReturn(true)
 
-        val manager = UpdateManager(activity, { sdk })
+        doAnswer { invocation ->
+            val listener = invocation.getArgument<OnSuccessListener<AppUpdateInfo>>(0)
+            listener.onSuccess(mockInfo)
+            null
+        }.`when`(mockTask).addOnSuccessListener(any())
 
-        var seenInfo: UpdateInfo? = null
-        manager.onUpdatePrompt = { info -> seenInfo = info }
+        val updater = UpdateManager(mockActivity, mockAppUpdateManager)
+        updater.checkForUpdate()
 
-        manager.checkForUpdate()
-
-        assertNotNull(seenInfo)
-        assertEquals(true, seenInfo!!.isAvailable)
-        assertEquals("1.2.3", seenInfo!!.versionName)
-    }
-
-    @Test
-    fun startUpdateFlowDelegatesToSDK() {
-        val activity = mock(Activity::class.java)
-        var recorded: Pair<Activity, Int>? = null
-        val sdk = object : UpdateSDK {
-            override fun checkForUpdate(callback: (UpdateInfo) -> Unit) {
-                // do nothing
-            }
-            override fun startUpdateFlow(activityParam: Activity, updateType: Int, requestCode: Int) {
-                recorded = Pair(activityParam, updateType)
-            }
-        }
-
-        val manager = UpdateManager(activity, { sdk })
-        manager.startUpdateFlow(AppUpdateType.IMMEDIATE)
-
-        assertNotNull(recorded)
-        assertEquals(activity, recorded!!.first)
-        assertEquals(AppUpdateType.IMMEDIATE, recorded!!.second)
+        verify(mockAppUpdateManager).startUpdateFlow(
+            eq(mockInfo), eq(AppUpdateType.IMMEDIATE), eq(mockActivity), anyInt()
+        )
     }
 }

@@ -3,29 +3,14 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
+    android:gravity="center"
     android:padding="16dp">
 
-    <!-- Container for dynamic update prompt UI (kept minimal as per constraints) -->
-    <LinearLayout
+    <!-- Lightweight placeholder for update prompt (UI changes are not the focus here) -->
+    <TextView
         android:id="@+id/update_prompt"
-        android:layout_width="match_parent"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:padding="12dp"
-        android:visibility="gone"
-        android:background="@android:color/white">
-
-        <TextView
-            android:id="@+id/update_message"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="A new version is available. Update now?" />
-
-        <Button
-            android:id="@+id/btn_update_now"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Update" />
-    </LinearLayout>
-
+        android:text="A new version is available. Update to continue."
+        android:textSize="16sp" />
 </LinearLayout>
