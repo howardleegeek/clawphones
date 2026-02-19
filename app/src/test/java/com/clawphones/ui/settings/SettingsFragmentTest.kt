@@ -48,6 +48,33 @@ class SettingsFragmentTest {
     }
 
     @Test
+    fun testNotificationToggleDisablePersistsInPrefs() {
+        val activity = createActivity()
+        val fragment = SettingsFragment()
+        activity.supportFragmentManager.beginTransaction().add(fragment, "settings").commitNow()
+
+        val root = fragment.requireView()
+        val switch = root.findViewById<Switch>(R.id.switch_notifications)
+        assertNotNull(switch)
+
+        val prefs = activity.getSharedPreferences("clawphones_prefs", Context.MODE_PRIVATE)
+        // default should be false
+        assertFalse(prefs.getBoolean("notifications_enabled", false))
+
+        // enable first to ensure we can disable
+        if (!switch.isChecked) {
+            switch.performClick()
+        }
+        assertTrue(prefs.getBoolean("notifications_enabled", false))
+
+        // now disable and ensure persisted
+        if (switch.isChecked) {
+            switch.performClick()
+        }
+        assertFalse(prefs.getBoolean("notifications_enabled", false))
+    }
+
+    @Test
     fun testPreferenceRestoredOnRecreate() {
         val activity1 = createActivity()
         val fragment1 = SettingsFragment()
