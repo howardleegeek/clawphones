@@ -133,3 +133,56 @@ Next Steps
 
 Note
 - This document is intentionally high level and non-prescriptive about internal implementations. The goal is to serve as a guiding reference for API design decisions.
+
+## Enhanced API Design Plan (Concrete Additions)
+- Objectives: tighten the contract, improve usability, and fortify security and observability while keeping backward compatibility where feasible.
+- Strategic pillars:
+  - Consistent contract envelope: standardize response and error shapes across all endpoints.
+  - Versioning and deprecation: explicit, predictable upgrade path with minimal churn.
+  - Resource ergonomics: stable identifiers, CRUD alignment, and partial updates where sensible.
+  - Accessibility of data: pagination, filtering, and sorting with clear defaults.
+  - Security by design: explicit scopes, audience checks, and least-privilege access per endpoint.
+  - Observability and reliability: request correlation, tracing, structured logs, and metrics.
+  - Documentation and onboarding: automated OpenAPI generation and SDKs where possible.
+
+- Actionable recommendations:
+  1) API envelope standardization
+     - All API responses should follow a single envelope, e.g.:
+       { "data": <payload>, "meta": { "request_id": "...", "timestamp": "...", "trace_id": "..." } }
+     - All errors should use a unified shape, e.g.:
+       { "error": { "code": "ERR_CODE", "message": "human readable", "details": {}, "request_id": "..." } }
+     - Validation errors should include a field-level map, e.g. { "errors": { "fieldName": "reason" } }.
+  2) OpenAPI as canonical contract
+     - Adopt OpenAPI 3.1+ as the source of truth; generate docs and client SDKs from it; use JSON Schema for payload validation.
+  3) Versioning and deprecation policy
+     - Endpoints under /v1, /v2, etc. with a documented deprecation window (e.g., 6-12 months) and a migration path.
+     - Prefer non-breaking changes; add new fields under a stable envelope without removing existing ones.
+  4) Resource modeling and CRUD ergonomics
+     - Use nouns for resources; stable identifiers (UUIDs or opaque IDs); use PATCH for partial updates when appropriate.
+     - Align HTTP methods with standard semantics: GET, POST, PUT/PATCH, DELETE; return 200/201 as appropriate.
+  5) Pagination, filtering, and sorting
+     - Implement cursor-based pagination where possible; return total count when feasible; expose next_page_token or next_cursor in meta.
+     - Standardize query params: page_size (limit), page_token (cursor), sort, filter expressions.
+  6) Security and access control
+     - Tokens carry scope and audience; enforce at edge and service layers; propagate authorization context without leaking data.
+     - Short-lived tokens with revocation support; audit trail for access decisions.
+  7) Observability and health checks
+     - Propagate correlation_id/trace_id through all services; emit structured logs and metrics (latency, error rate, p99).
+     - Health and readiness endpoints per service; include dependency health in overall status.
+  8) Validation and schema discipline
+     - Validate requests against OpenAPI/json schemas; return clear, field-specific errors.
+  9) Migration plan and milestones
+     - Phase-based rollout with a running OpenAPI skeleton, envelope standardization, pagination, then deprecation.
+
+- Concrete roadmap (tightened):
+  - Phase 0: OpenAPI v3 skeleton for core resources; establish envelope and error schema defaults.
+  - Phase 1: Instrument tracing, standardized error/meta envelopes; add basic pagination defaults.
+  - Phase 2: Expand validation, add more endpoints under v1 with stable contracts; align with docs portal.
+  - Phase 3: Introduce deprecation notes and migration tooling; ensure clients can test against new contracts.
+  - Phase 4: CI for OpenAPI generation and contract validation.
+
+- Example contract touchpoints (for reference):
+  - Error envelope: { "code": "INVALID_INPUT", "message": "Invalid payload", "details": {"field": "value"}, "request_id": "abc-123" }
+  - Successful envelope: { "data": { ... }, "meta": { "request_id": "abc-123", "timestamp": "2026-02-19T12:00:00Z" } }
+
+- Rationale: these changes reduce ambiguity, enhance developer experience, and improve operator visibility without forcing large immediate rewrites.
