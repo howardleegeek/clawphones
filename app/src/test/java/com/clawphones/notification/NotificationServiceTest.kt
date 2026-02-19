@@ -17,9 +17,9 @@ class NotificationServiceTest {
     )
     val service = NotificationService()
     val config = service.decide(user, actions)
-    // PUSH has higher base and engagement boost, expect PUSH
+    // PUSH has higher base and engagement boost, expect PUSH and frequency increased
     assertEquals(NotificationType.PUSH, config.type)
-    assertEquals(3, config.frequencyPerHour)
+    assertEquals(4, config.frequencyPerHour)
   }
 
   @Test
