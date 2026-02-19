@@ -1,5 +1,9 @@
 package com.clawphones.ui.settings
 
+// Note: This module is designed for unit testing the settings UI logic without
+// depending on Android framework widgets. The real UI would use Android Switch
+// (or SwitchCompat) bound to these properties. Tests inject ToggleSwitch mocks
+// to verify behavior against the persistent UserPreferencesStore.
 data class UserPreferences(
   var prefEnabled: Boolean = false,
   var notificationsEnabled: Boolean = true,
