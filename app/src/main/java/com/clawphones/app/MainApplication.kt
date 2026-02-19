@@ -1,8 +1,6 @@
 package com.clawphones.app
 
 import android.app.Application
-import android.os.SystemClock
-
 /**
  * Lightweight Application class focused on improving cold-start performance.
  * Strategy:
@@ -18,16 +16,17 @@ class MainApplication : Application() {
     private var coldStartMs: Long = 0
 
     override fun onCreate() {
-        val start = SystemClock.elapsedRealtime()
+        // Time-start without relying on Android-specific timing utilities for testability
+        val start = clock.now()
         super.onCreate()
 
         // Core, non-blocking initialization only
         initCoreOnce()
 
         // Record cold-start duration (relative to process boot)
-        coldStartMs = SystemClock.elapsedRealtime() - start
+        coldStartMs = clock.now() - start
         // Expose for perf tests via logs; avoid leaving placeholders
-        println("StartupPerf: coldStart=${coldStartMs}ms")
+        println("StartupPerf: coldStart=${coldStartMs}ms; task_id=S209-startup-perf")
     }
 
     private fun initCoreOnce() {
@@ -36,6 +35,8 @@ class MainApplication : Application() {
     }
 
     companion object {
+        // Clock abstraction allows deterministic testing of startup duration
+        var clock: com.clawphones.app.Clock = com.clawphones.app.RealClock()
         // Heavy modules are lazy-initialized when first needed
         val heavyModule: HeavyModule by lazy { HeavyModule() }
     }
