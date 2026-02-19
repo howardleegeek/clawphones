@@ -8,6 +8,7 @@ import android.widget.TextView
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import com.clawphones.data.model.User
+import com.clawphones.util.Logger
 
 class HomeFragment : Fragment() {
     private val viewModel: HomeViewModel by viewModels()
@@ -32,6 +33,9 @@ class HomeFragment : Fragment() {
         userPhoneTextView = view.findViewById(R.id.text_user_phone)
         
         observeUserData()
+
+        // Log initialization for tracing with task_id context
+        Logger.d("HomeFragment-G14-CP", "task_id=G14-06-CP UI initialized")
     }
 
     private fun observeUserData() {
