@@ -4,6 +4,9 @@ import java.util.concurrent.ConcurrentHashMap
 
 /** Simple in-memory authentication service with optional MFA (OTP). */
 object AuthenticationService {
+    private const val OTP_STEP_MILLIS = 30_000L
+    private const val OTP_DRIFT_STEPS = 1
+
     data class User(
         val username: String,
         val password: String,
@@ -49,6 +52,27 @@ object AuthenticationService {
         return users[username]?.mfaEnabled ?: false
     }
 
+    fun generateOtpForUser(username: String, timestamp: Long = System.currentTimeMillis()): String? {
+        val user = users[username] ?: return null
+        val secret = user.mfaSecret ?: return null
+        return OtpUtil.generateOtp(secret, timestamp)
+    }
+
+    fun verifyOtp(username: String, otp: String, timestamp: Long = System.currentTimeMillis()): Boolean {
+        val user = users[username] ?: return false
+        if (!user.mfaEnabled) return false
+        val secret = user.mfaSecret ?: return false
+        return isOtpValid(secret, otp, timestamp)
+    }
+
+    private fun isOtpValid(secret: String, otp: String, timestamp: Long): Boolean {
+        for (step in -OTP_DRIFT_STEPS..OTP_DRIFT_STEPS) {
+            val candidate = OtpUtil.generateOtp(secret, timestamp + (step * OTP_STEP_MILLIS))
+            if (candidate == otp) return true
+        }
+        return false
+    }
+
     /** Attempt to login with username and password. If MFA is enabled for the user,
      *  otp must be provided and valid. */
     fun login(username: String, password: String, otp: String? = null): LoginResult {
@@ -57,13 +81,9 @@ object AuthenticationService {
             return LoginResult(false, message = "Invalid credentials")
         }
         if (user.mfaEnabled) {
+            if (otp == null) return LoginResult(false, requiresOtp = true, message = "OTP required")
             val secret = user.mfaSecret ?: return LoginResult(false, message = "MFA secret missing")
-            // OTP is valid for the current time window or the previous window to account for clock drift
-            val now = System.currentTimeMillis()
-            val otpNow = OtpUtil.generateOtp(secret, now)
-            val otpPrev = OtpUtil.generateOtp(secret, now - 30_000)
-            val otpNext = OtpUtil.generateOtp(secret, now + 30_000)
-            val valid = otp != null && (otp == otpNow || otp == otpPrev || otp == otpNext)
+            val valid = isOtpValid(secret, otp, System.currentTimeMillis())
             return if (valid) LoginResult(true) else LoginResult(false, requiresOtp = true, message = "Invalid OTP")
         }
         // MFA not enabled; login success
