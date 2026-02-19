@@ -1,38 +1,70 @@
 package com.clawphones.ui.settings
 
-// Simple in-memory user preferences model for testing without Android framework
-data class UserPreferences(var prefEnabled: Boolean = false)
+data class UserPreferences(
+  var prefEnabled: Boolean = false,
+  var notificationsEnabled: Boolean = true,
+  var darkModeEnabled: Boolean = false
+)
 
-// In-memory store representing persisted user preferences
 object UserPreferencesStore {
-  var current: UserPreferences = UserPreferences(false)
+  var current: UserPreferences = UserPreferences()
+  
   fun update(enabled: Boolean) {
     current = current.copy(prefEnabled = enabled)
   }
+  
+  fun updateNotifications(enabled: Boolean) {
+    current = current.copy(notificationsEnabled = enabled)
+  }
+  
+  fun updateDarkMode(enabled: Boolean) {
+    current = current.copy(darkModeEnabled = enabled)
+  }
 }
 
-// Lightweight switch abstraction to enable unit testing without Android UI.
 interface ToggleSwitch {
   var isChecked: Boolean
   var onToggleListener: ((Boolean) -> Unit)?
 }
 
-// SettingsFragment exposes a Switch-like control and binds it to UserPreferences.
-// In production this would be an Android Fragment with a real Switch, but for
-// tests we keep it lightweight and testable.
-class SettingsFragment(private val switchControl: ToggleSwitch = object : ToggleSwitch {
-  override var isChecked: Boolean = false
-  override var onToggleListener: ((Boolean) -> Unit)? = null
-}) {
+class SettingsFragment(
+  private val prefSwitch: ToggleSwitch = object : ToggleSwitch {
+    override var isChecked: Boolean = false
+    override var onToggleListener: ((Boolean) -> Unit)? = null
+  },
+  private val notificationsSwitch: ToggleSwitch = object : ToggleSwitch {
+    override var isChecked: Boolean = false
+    override var onToggleListener: ((Boolean) -> Unit)? = null
+  },
+  private val darkModeSwitch: ToggleSwitch = object : ToggleSwitch {
+    override var isChecked: Boolean = false
+    override var onToggleListener: ((Boolean) -> Unit)? = null
+  }
+  ) {
+  // Secondary constructor for testing: allow injecting custom switch mocks
+  constructor(
+    prefSwitch: ToggleSwitch,
+    notificationsSwitch: ToggleSwitch,
+    darkModeSwitch: ToggleSwitch
+  ) : this(prefSwitch, notificationsSwitch, darkModeSwitch)
   init {
-    // Initialize UI state from stored preferences
-    switchControl.isChecked = UserPreferencesStore.current.prefEnabled
-    // Bind changes in the UI back to the stored preferences
-    switchControl.onToggleListener = { newValue ->
+    prefSwitch.isChecked = UserPreferencesStore.current.prefEnabled
+    prefSwitch.onToggleListener = { newValue ->
       UserPreferencesStore.update(newValue)
+    }
+    
+    notificationsSwitch.isChecked = UserPreferencesStore.current.notificationsEnabled
+    notificationsSwitch.onToggleListener = { newValue ->
+      UserPreferencesStore.updateNotifications(newValue)
+    }
+    
+    darkModeSwitch.isChecked = UserPreferencesStore.current.darkModeEnabled
+    darkModeSwitch.onToggleListener = { newValue ->
+      UserPreferencesStore.updateDarkMode(newValue)
     }
   }
 
-  // Expose the switch to tests
-  fun getSwitch(): ToggleSwitch = switchControl
+  fun getPrefSwitch(): ToggleSwitch = prefSwitch
+  fun getNotificationsSwitch(): ToggleSwitch = notificationsSwitch
+  fun getDarkModeSwitch(): ToggleSwitch = darkModeSwitch
 }
