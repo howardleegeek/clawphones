@@ -43,6 +43,22 @@ class PerformanceMonitor(
     private val batteryProvider: BatteryProvider,
     private val reporter: PerformanceReporter
 ) {
+    // Fallback no-op reporter to simplify instantiation when a real reporter isn't provided
+    private object NoOpReporter : PerformanceReporter {
+        override suspend fun report(metric: PerformanceMetric) {
+            // intentionally empty
+        }
+    }
+
+    /**
+     * Secondary constructor for convenience when a reporter isn't required yet.
+     * It wires in a no-op reporter to avoid null checks in calling code.
+     */
+    constructor(
+        cpuProvider: CpuUsageProvider,
+        memoryProvider: MemoryUsageProvider,
+        batteryProvider: BatteryProvider
+    ) : this(cpuProvider, memoryProvider, batteryProvider, NoOpReporter)
     /**
      * Starts monitoring and returns a Flow of PerformanceMetric samples.
      * The Flow emits indefinitely until collected with a terminal operator.
