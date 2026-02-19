@@ -39,4 +39,30 @@ class PushPayloadParserTest {
         val payload = PushPayloadParser.parseFromData(data)
         assertNull(payload)
     }
+ 
+    @Test
+    fun bodyAndTitleFromAliasesAreParsed() {
+        val data = mapOf(
+            "message" to "Hello from alias",
+            "chat_id" to "conv-77",
+            "silent" to "false"
+        )
+        val payload = PushPayloadParser.parseFromData(data)
+        assertTrue(payload != null)
+        assertEquals("Hello from alias", payload?.body)
+        assertEquals("conv-77", payload?.conversationId)
+        assertEquals(false, payload?.silent)
+        assertEquals(null, payload?.title)
+    }
+
+    @Test
+    fun silentPushWithOnlyTitleIsAllowed() {
+        val data = mapOf("title" to "Alert", "silent" to "true")
+        val payload = PushPayloadParser.parseFromData(data)
+        assertTrue(payload != null)
+        assertEquals("Alert", payload?.title)
+        assertEquals(null, payload?.body)
+        assertEquals(null, payload?.conversationId)
+        assertEquals(true, payload?.silent)
+    }
 }
