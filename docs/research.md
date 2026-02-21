@@ -86,3 +86,55 @@ Appendix
 - Notes: This document is an analytical proposal and should be refined with product and engineering teams.
 
 --- End of Analysis ---
+
+## API Design Deep Dive (Enhanced)
+
+- Strategic goals: provide a minimal, stable, and secure API surface that enables on-device computation with cloud coordination when needed, while preserving developer ergonomics and safety.
+- Scope: focus on a clean REST-like surface under a single versioned namespace, e.g. /v1, with well-defined resources and contracts. The goal is not to implement an API now, but to lay a concrete blueprint that engineering teams can implement in a phased rollout.
+
+### Core Resource Model
+- Users: represents human or service principals consuming the API.
+- Devices: registered hardware/software units participating in coordination with clawphones.
+- Sessions: authentication and activity sessions for users/devices.
+- Jobs: asynchronous tasks or ML workloads dispatched to devices.
+- Logs: audit and operation logs for observability.
+
+Suggested base URIs (illustrative):
+- /v1/users
+- /v1/users/{id}
+- /v1/devices
+- /v1/devices/{id}
+- /v1/sessions
+- /v1/sessions/{id}
+- /v1/jobs
+- /v1/jobs/{id}
+- /v1/logs
+- /v1/logs/{id}
+
+### API Design Principles (refined)
+- Consistency: uniform resource naming and predictable behavior across endpoints.
+- Versioning: prefix with /v1/ and define deprecation plans for future versions.
+- Clarity: explicit resource nouns; use standard HTTP methods for actions (GET/POST/PATCH/DELETE).
+- Security: token-based auth with scopes; short-lived access tokens and refresh flows if applicable.
+- Observability: embed trace IDs and standard metrics in responses; structured logging.
+- Testability: define OpenAPI contracts and contract tests (PACT-like) to guard against drift.
+
+### OpenAPI Skeleton (Illustrative, Non-Operational)
+- SecuritySchemes: OAuth2 or APIKey with scope definitions like read:devices, write:devices.
+- Components: schemas for User, Device, Session, Job, Log with validation rules.
+- Paths: /v1/devices (GET, POST), /v1/devices/{id} (GET, PATCH, DELETE), etc. See the Findings section for detailed mapping.
+
+### Migration and Rollout Plan (Short-Term)
+- Phase 1: Publish an OpenAPI skeleton for /v1/devices and /v1/users; add security scheme stubs.
+- Phase 2: Implement error envelopes, pagination defaults, and input validation rules across entities.
+- Phase 3: Expose docs at /docs/openapi.yaml, start contract tests, and begin SDK generation pilots.
+
+### Risks and Mitigations (Expanded)
+- Drift risk: enforce schema validation and contract tests; establish review gates for changes.
+- Security risk: implement strict scopes, rotate keys, and maintain access reviews; provide fallback legacy flow briefly if needed.
+- Operational risk: ensure observability by default with trace IDs and metrics; integrate with existing logging infra.
+
+### Next Steps for the Team
+- Draft/OpenAPI contract for /v1/devices and /v1/users and circulate for design review.
+- Define a minimal paging scheme (limit/offset or cursor) and document default page sizes.
+- Add error envelope guidance (code, message, details) and ensure requestId is returned.
