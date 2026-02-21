@@ -1,4 +1,12 @@
-API Design Review and Improvement Suggestions for clawphones
+Executive Summary
+- This document provides a concise executive view of API design direction for clawphones, intended to guide architecture work and future implementation.
+- Key takeaways:
+- Establish a versioned REST-like surface under /v1 with resource models: Users, Devices, Sessions, Jobs, Logs.
+- Prioritize security (OAuth2/JWT scopes), observability (trace IDs, metrics), and contract testing (OpenAPI + Pact-like tests).
+- Deliver a minimal OpenAPI skeleton (/docs/openapi.yaml) for core resources; enable SDK generation later.
+- Prepare a phased migration plan with Phase 0 skeleton, Phase 1 enhancements (errors, paging, validation), Phase 2 docs + SDKs, Phase 3 rollout.
+
+Overview
 
 Overview
 - This document provides a pure analysis of the current API design for clawphones and concrete recommendations to improve consistency, safety, and developer experience. It avoids code changes and focuses on architectural and design decisions, with actionable next steps and concrete proposals.
