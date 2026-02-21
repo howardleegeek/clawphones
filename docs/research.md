@@ -137,4 +137,51 @@ Suggested base URIs (illustrative):
 ### Next Steps for the Team
 - Draft/OpenAPI contract for /v1/devices and /v1/users and circulate for design review.
 - Define a minimal paging scheme (limit/offset or cursor) and document default page sizes.
-- Add error envelope guidance (code, message, details) and ensure requestId is returned.
+ - Add error envelope guidance (code, message, details) and ensure requestId is returned.
+ 
+**API Design — Practical Roadmap Update (2026)**
+
+- Executive focus: translate the high level design into a concrete, phased REST-like surface with clear contracts, observability, and tooling support. This update adds a pragmatic blueprint suitable for the current repository posture where code changes are restricted but architecture discussions are captured for future implementation.
+
+- Core resource model refinement
+  - Resources: Users, Devices, Sessions, Jobs, Logs (as already proposed). Extend with a unified identifier model and consistent CRUD behavior.
+  - URI schema: /v1/{resource} and /v1/{resource}/{id}. Use plural nouns. Example: /v1/devices, /v1/devices/{id}.
+  - Actions via HTTP: GET list, GET by id, POST create, PATCH/PUT partial update, DELETE remove. For sessions and jobs, separate POST endpoints for actions (e.g., /v1/sessions for login, /v1/jobs for dispatch).
+
+- API contracts and OpenAPI
+  - Publish a basic OpenAPI 3.x skeleton under /docs/openapi.yaml that captures core endpoints and schemas (User, Device, Session, Job, Log).
+  - Define securitySchemes (OAuth2 or APIKey) with scopes such as read:devices, write:devices, read:sessions, write:jobs.
+  - Ensure error responses follow a consistent envelope: {"error": {"code": "CODE", "message": "msg", "details": {...}}, "requestId": "<id>"} and proper HTTP status codes.
+
+- Security and authentication
+  - Recommend JWT with scopes or OAuth 2.0 with minimal footprint. Support short lived access tokens and refresh tokens if there are user facing flows.
+  - Align endpoints with required scopes per operation; rotate keys; validate audience/issuer.
+
+- Observability and resilience
+  - Trace-id in responses and requests; propagate across services. Measure latency, error rate, and saturation.
+  - Add structured logging with context including task_id, endpoints, and user/device id when applicable.
+  - Implement basic rate limiting per token/user with headers like X-Rate-Limit-Remaining.
+
+- Validation and data quality
+  - Use JSON Schema or OpenAPI components for consistent input validation across endpoints.
+  - Treat schema drift as a hard issue; require contract tests to guard APIs.
+
+- Testing strategy (concrete next steps)
+  - Contract tests against OpenAPI spec (PACT-like) to catch breaking changes.
+  - Unit tests for validators and serializers, integration tests for core workflows (auth, device registration, job dispatch).
+  - Generate basic SDKs from the OpenAPI surface for developer ergonomics.
+
+- Migration and rollout plan (phases)
+  - Phase 0 (now): finalize skeleton OpenAPI and auth stubs; document the blueprint.
+  - Phase 1: implement error envelopes, paging defaults, and input validation; add contract tests.
+  - Phase 2: publish docs/openapi.yaml, enable metrics/tracing, start SDK pilots.
+
+- Risks and mitigations (extended)
+  - Drift and schema evolution: enforce strong contract tests and CI gates.
+  - Security: ensure scopes and key rotation; provide a short lived token lifecycle and revocation strategy.
+  - Operational risk: bootstrap observability and alerting early; reuse existing logging/backends when possible.
+
+- Quick wins for the next sprint
+  - Create /docs/openapi.yaml skeleton for /v1/devices and /v1/users and wire in basic auth scaffolding.
+  - Define error envelope and sample responses for common failure modes.
+  - Document a minimal paging strategy and default limits.
