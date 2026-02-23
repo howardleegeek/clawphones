@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Base theme using DayNight so it can auto-follow system or be overridden by ThemeManager -->
+    <style name="Theme.Clawphones" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+        <!-- Customize colors via color resources if needed -->
+    </style>
+    <!-- Optional explicit light theme (fallback) -->
+    <style name="Theme.Clawphones.Light" parent="Theme.MaterialComponents.Light.NoActionBar">
+    </style>
+    <!-- Optional explicit dark theme (fallback) -->
+    <style name="Theme.Clawphones.Dark" parent="Theme.MaterialComponents.Dark.NoActionBar">
+    </style>
+</resources>
