@@ -1,0 +1,4 @@
+Task progress log for S01-008: iOS XCUITest baseline tests added.
+- Created ios/ClawPhonesTests/LoginFlowTests.swift with UI test scaffolding for login/registration, conversation list, and message send flows.
+- Test focuses on accessibility identifiers: emailField, passwordField, loginButton, signUpButton, usernameField, confirmPasswordField, registerButton, conversationsTable.
+- Next steps: integrate with existing Xcode project, ensure accessibility IDs exist in app, run on iOS Simulator, adjust selectors as needed.
